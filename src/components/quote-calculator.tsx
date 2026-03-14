@@ -77,6 +77,48 @@ function getPincodeFactor(value: string) {
   return digits.split("").reduce((sum, digit) => sum + Number(digit), 0);
 }
 
+function normalizeCardNumber(value: string) {
+  return value.replace(/\D/g, "").slice(0, 16);
+}
+
+function formatCardNumber(value: string) {
+  return normalizeCardNumber(value)
+    .replace(/(.{4})/g, "$1 ")
+    .trim();
+}
+
+function normalizeCardExpiry(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 4);
+
+  if (digits.length < 3) {
+    return digits;
+  }
+
+  return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+}
+
+function getMaskedPaymentInstrumentLabel(
+  paymentMethod: "credit_card" | "debit_card" | "upi",
+  details: {
+    cardNumber: string;
+    upiId: string;
+  },
+) {
+  if (paymentMethod === "upi") {
+    const [handle, domain] = details.upiId.split("@");
+    if (!handle || !domain) {
+      return "UPI";
+    }
+
+    const visible = handle.slice(0, 2);
+    return `UPI ${visible}${"*".repeat(Math.max(handle.length - 2, 1))}@${domain}`;
+  }
+
+  const digits = normalizeCardNumber(details.cardNumber);
+  const last4 = digits.slice(-4) || "0000";
+  return `${paymentMethod === "debit_card" ? "Debit card" : "Credit card"} ending ${last4}`;
+}
+
 export function QuoteCalculator() {
   const [originCountry, setOriginCountry] = useState("IN");
   const [originState, setOriginState] = useState("MH");
@@ -99,7 +141,12 @@ export function QuoteCalculator() {
   const [selectedService, setSelectedService] = useState<DeliveryOption["service"]>("Normal delivery");
   const [billingName, setBillingName] = useState("");
   const [billingEmail, setBillingEmail] = useState("");
-  const [paymentProvider, setPaymentProvider] = useState<"stripe" | "razorpay">("stripe");
+  const [paymentMethod, setPaymentMethod] = useState<"credit_card" | "debit_card" | "upi">("credit_card");
+  const [cardHolderName, setCardHolderName] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+  const [upiId, setUpiId] = useState("");
   const [paymentPending, setPaymentPending] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [lookupState, setLookupState] = useState<{
@@ -285,17 +332,56 @@ export function QuoteCalculator() {
       return;
     }
 
+    if (paymentMethod === "upi") {
+      const normalizedUpiId = upiId.trim().toLowerCase();
+
+      if (!/^[a-z0-9.\-_]{2,}@[a-z]{2,}$/i.test(normalizedUpiId)) {
+        setPaymentError("Enter a valid UPI ID to continue.");
+        return;
+      }
+    } else {
+      const normalizedCardNumber = normalizeCardNumber(cardNumber);
+      const normalizedExpiry = cardExpiry.replace(/\D/g, "");
+      const normalizedCvv = cardCvv.replace(/\D/g, "");
+
+      if (!cardHolderName.trim()) {
+        setPaymentError("Enter the card holder name to continue.");
+        return;
+      }
+
+      if (normalizedCardNumber.length < 13 || normalizedCardNumber.length > 16) {
+        setPaymentError("Enter a valid card number to continue.");
+        return;
+      }
+
+      if (normalizedExpiry.length !== 4) {
+        setPaymentError("Enter a valid card expiry in MM/YY format.");
+        return;
+      }
+
+      if (normalizedCvv.length < 3 || normalizedCvv.length > 4) {
+        setPaymentError("Enter a valid CVV to continue.");
+        return;
+      }
+    }
+
     setPaymentPending(true);
     setPaymentError(null);
 
     try {
+      const paymentInstrumentLabel = getMaskedPaymentInstrumentLabel(paymentMethod, {
+        cardNumber,
+        upiId,
+      });
+
       const response = await fetch("/api/payment-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           billingName,
           billingEmail,
-          provider: paymentProvider,
+          paymentMethod,
+          paymentInstrumentLabel,
           serviceLevel: selectedQuote.service,
           amount: Number(selectedQuote.amount.toFixed(2)),
           currency: "USD",
@@ -397,7 +483,7 @@ export function QuoteCalculator() {
                 <input onChange={(event) => setOriginAddress(event.target.value)} type="text" value={originAddress} />
               </label>
               <label>
-                Room / unit no.
+                Flat/Area
                 <input onChange={(event) => setOriginRoom(event.target.value)} type="text" value={originRoom} />
               </label>
             </div>
@@ -464,7 +550,7 @@ export function QuoteCalculator() {
                 <input onChange={(event) => setDestinationAddress(event.target.value)} type="text" value={destinationAddress} />
               </label>
               <label>
-                Room / unit no.
+                Flat/Area
                 <input onChange={(event) => setDestinationRoom(event.target.value)} type="text" value={destinationRoom} />
               </label>
             </div>
@@ -620,15 +706,79 @@ export function QuoteCalculator() {
             </div>
 
             <label>
-              Payment provider
+              Payment method
               <select
-                onChange={(event) => setPaymentProvider(event.target.value as "stripe" | "razorpay")}
-                value={paymentProvider}
+                onChange={(event) => {
+                  const nextMethod = event.target.value as "credit_card" | "debit_card" | "upi";
+                  setPaymentMethod(nextMethod);
+                  setPaymentError(null);
+                }}
+                value={paymentMethod}
               >
-                <option value="stripe">Stripe hosted checkout</option>
-                <option value="razorpay">Razorpay payment link</option>
+                <option value="credit_card">Credit card</option>
+                <option value="debit_card">Debit card</option>
+                <option value="upi">UPI</option>
               </select>
             </label>
+
+            {paymentMethod === "upi" ? (
+              <label>
+                UPI ID
+                <input
+                  onChange={(event) => setUpiId(event.target.value)}
+                  placeholder="name@upi"
+                  type="text"
+                  value={upiId}
+                />
+              </label>
+            ) : (
+              <>
+                <div className="quote-form__row">
+                  <label>
+                    Card holder name
+                    <input
+                      onChange={(event) => setCardHolderName(event.target.value)}
+                      placeholder="Ayush Patel"
+                      type="text"
+                      value={cardHolderName}
+                    />
+                  </label>
+                  <label>
+                    Card number
+                    <input
+                      inputMode="numeric"
+                      onChange={(event) => setCardNumber(formatCardNumber(event.target.value))}
+                      placeholder="4242 4242 4242 4242"
+                      type="text"
+                      value={cardNumber}
+                    />
+                  </label>
+                </div>
+
+                <div className="quote-form__row">
+                  <label>
+                    Card expiry
+                    <input
+                      inputMode="numeric"
+                      onChange={(event) => setCardExpiry(normalizeCardExpiry(event.target.value))}
+                      placeholder="MM/YY"
+                      type="text"
+                      value={cardExpiry}
+                    />
+                  </label>
+                  <label>
+                    CVV
+                    <input
+                      inputMode="numeric"
+                      onChange={(event) => setCardCvv(event.target.value.replace(/\D/g, "").slice(0, 4))}
+                      placeholder="123"
+                      type="password"
+                      value={cardCvv}
+                    />
+                  </label>
+                </div>
+              </>
+            )}
 
             {paymentError ? <p className="form-feedback form-feedback--error">{paymentError}</p> : null}
 

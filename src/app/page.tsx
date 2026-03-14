@@ -16,17 +16,6 @@ export default function Home() {
     <main className="page-shell">
       <HeroSection />
 
-      <section className="logo-strip container" aria-label="trusted partners">
-        <span>Connected to modern freight teams</span>
-        <div>
-          <p>MAERSK</p>
-          <p>MSC</p>
-          <p>HAPAG-LLOYD</p>
-          <p>DHL GLOBAL</p>
-          <p>KUEHNE+NAGEL</p>
-        </div>
-      </section>
-
       <section className="section container" id="capabilities">
         <div className="section-heading section-heading--wide section-heading--xwide">
           <p className="eyebrow">What you can do</p>
@@ -177,7 +166,9 @@ export default function Home() {
         <div className="container cta-panel">
           <div>
             <p className="eyebrow">Next step</p>
-            <h2>Use the marketplace, request an enterprise walkthrough, or integrate the APIs.</h2>
+            <h2 className="cta-panel__heading--compact">
+              Use the marketplace, request an enterprise walkthrough, or integrate the APIs.
+            </h2>
             <p>
               The route structure now follows the analyzed surfaces more closely: public marketing,
               enterprise, demo, quote search, and developer entry points.

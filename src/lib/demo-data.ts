@@ -62,12 +62,14 @@ export const demoShipments = [
     current_status: "Gate in at origin terminal",
     vessel_name: "MV Pacific Horizon",
     eta_label: "ETA Apr 4",
+    location_label: "Nhava Sheva Port",
   },
   {
     booking_reference: "FRT-2026-1043",
     current_status: "Transshipment complete",
     vessel_name: "MV Blue Crest",
     eta_label: "ETA Mar 29",
+    location_label: "Colombo Port",
   },
 ];
 

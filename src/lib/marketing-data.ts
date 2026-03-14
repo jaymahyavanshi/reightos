@@ -64,11 +64,9 @@ export const headerGroups: HeaderGroup[] = [
   { label: "Get Quote", href: "/quote" },
   { label: "Enterprise", href: "/enterprise" },
   { label: "Developers", href: "/developers/freight-tools" },
-  { label: "Resources", href: "/resources" },
 ];
 
 export const navigationItems: NavigationItem[] = [
-  { href: "/", label: "Freight Marketplace" },
   { href: "/enterprise", label: "Enterprise" },
   { href: "/quote", label: "Get Quote" },
   { href: "/developers/freight-tools", label: "Developers" },

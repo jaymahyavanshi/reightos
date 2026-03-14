@@ -91,7 +91,6 @@ export default function ShippingLanesPage() {
             <div className="feature-stack">
               {freightLocations.map((country) => (
                 <article className="feature-card" key={country.code}>
-                  <span className="priority priority--important">{country.code}</span>
                   <h3>
                     <span className="country-label">
                       <span className="country-flag" aria-hidden="true">

@@ -7,8 +7,7 @@ export function SiteFooter() {
         <div>
           <h3>Freightos AI</h3>
           <p>
-            Search, compare, book, and integrate freight workflows with a marketplace,
-            enterprise operations layer, and developer-ready data services.
+            Bacancy Technology, 15-16, Times Corporate Park, Thaltej, Ahmedabad, Gujarat 380059.
           </p>
         </div>
         <div>
@@ -28,6 +27,12 @@ export function SiteFooter() {
           <Link href="/resources">Resources</Link>
           <Link href="/enterprise/demo">Request demo</Link>
           <Link href="/developers/freight-tools">Developers</Link>
+        </div>
+        <div>
+          <h4>Support</h4>
+          <Link href="/contact">Contact us</Link>
+          <Link href="/support">Create support ticket</Link>
+          <Link href="/support/track">Track support ticket</Link>
         </div>
         <div>
           <h4>Account</h4>

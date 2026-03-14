@@ -16,29 +16,34 @@ export function DemoRequestForm() {
     const formData = new FormData(form);
     const email = String(formData.get("email") ?? "").trim();
     const name = String(formData.get("fullName") ?? "").trim();
+    const phoneNumber = String(formData.get("phoneNumber") ?? "").trim();
     const company = String(formData.get("company") ?? "").trim();
 
-    if (!email || !name || !company) {
-      setError("Please complete your work email, full name, and company.");
+    if (!email || !name || !phoneNumber || !company) {
+      setError("Please complete your work email, full name, phone number, and company.");
       return;
     }
 
     startTransition(async () => {
       const payload = Object.fromEntries(formData.entries());
-      const response = await fetch("/api/demo-request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      try {
+        const response = await fetch("/api/demo-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
-      const result = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        setError(result.error ?? "Unable to submit your demo request right now.");
-        return;
+        const result = (await response.json()) as { error?: string; message?: string };
+        if (!response.ok) {
+          setError(result.error ?? "Unable to submit your demo request right now.");
+          return;
+        }
+
+        setSuccess(result.message ?? "Demo request submitted. Confirmation has been sent to your email.");
+        form.reset();
+      } catch {
+        setError("Unable to submit your demo request right now.");
       }
-
-      setSuccess("Demo request submitted. Confirmation has been sent to your email.");
-      form.reset();
     });
   }
 
@@ -52,6 +57,10 @@ export function DemoRequestForm() {
       <label>
         Full name
         <input name="fullName" placeholder="Your name" required type="text" />
+      </label>
+      <label>
+        Phone number
+        <input name="phoneNumber" placeholder="+91 98765 43210" required type="tel" />
       </label>
       <label>
         Company

@@ -16,10 +16,12 @@ export type DashboardMetric = {
 };
 
 export type ShipmentPreview = {
+  id: string;
   bookingReference: string;
   status: string;
   vessel: string;
   etaLabel: string;
+  locationLabel: string;
 };
 
 export async function getMarketplaceQuotes(): Promise<QuoteCard[]> {
@@ -87,12 +89,28 @@ export async function getShipmentPreviews(): Promise<ShipmentPreview[]> {
   if (supabase) {
     const { data } = await supabase
       .from("shipments")
-      .select("current_status, vessel_name, eta, bookings(booking_reference)")
+      .select("id, current_status, vessel_name, eta, bookings(booking_reference)")
       .order("created_at", { ascending: false })
       .limit(3);
 
     if (data?.length) {
+      const shipmentIds = (data as Array<{ id: string }>).map((shipment) => shipment.id);
+      const { data: events } = await supabase
+        .from("tracking_events")
+        .select("shipment_id, location, event_time")
+        .in("shipment_id", shipmentIds)
+        .order("event_time", { ascending: false });
+
+      const latestLocations = new Map<string, string>();
+
+      (events ?? []).forEach((event) => {
+        if (!latestLocations.has(event.shipment_id)) {
+          latestLocations.set(event.shipment_id, event.location ?? "Location pending");
+        }
+      });
+
       return (data as Array<{
+        id: string;
         current_status: string;
         vessel_name: string | null;
         eta: string | null;
@@ -101,20 +119,24 @@ export async function getShipmentPreviews(): Promise<ShipmentPreview[]> {
           | Array<{ booking_reference?: string | null }>
           | null;
       }>).map((shipment) => ({
+        id: shipment.id,
         bookingReference:
           (Array.isArray(shipment.bookings) ? shipment.bookings[0]?.booking_reference : shipment.bookings?.booking_reference) ??
           "Pending",
         status: shipment.current_status,
         vessel: shipment.vessel_name ?? "Unassigned vessel",
         etaLabel: shipment.eta ? `ETA ${new Date(shipment.eta).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "ETA pending",
+        locationLabel: latestLocations.get(shipment.id) ?? "Location pending",
       }));
     }
   }
 
   return demoShipments.map((shipment) => ({
+    id: shipment.booking_reference,
     bookingReference: shipment.booking_reference,
     status: shipment.current_status,
     vessel: shipment.vessel_name,
     etaLabel: shipment.eta_label,
+    locationLabel: shipment.location_label,
   }));
 }
