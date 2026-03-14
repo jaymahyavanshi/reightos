@@ -1,0 +1,2 @@
+# reightos
+reightos ai mahakurukshetra
