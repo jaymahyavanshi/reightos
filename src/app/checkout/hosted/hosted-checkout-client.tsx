@@ -57,11 +57,10 @@ export function HostedCheckoutClient() {
     <main className="page-shell page-shell--inner">
       <section className="inner-hero inner-hero--plain">
         <div className="container">
-          <p className="eyebrow">Sandbox checkout</p>
-          <h1>Hosted payment link is not configured for this payment method yet.</h1>
+          <p className="eyebrow">Secure checkout</p>
+          <h1>Review your payment details and complete the booking.</h1>
           <p className="hero__lead">
-            The quote was accepted and the app redirected into an in-product checkout placeholder so
-            the booking flow can continue locally.
+            Confirm the payment summary below and continue to finish this shipment order.
           </p>
         </div>
       </section>
@@ -97,13 +96,10 @@ export function HostedCheckoutClient() {
 
           <article className="feature-card">
             <div className="section-heading section-heading--compact section-heading--small">
-              <p className="eyebrow">Next step</p>
-              <h2>Configure a real hosted link to replace this fallback.</h2>
+              <p className="eyebrow">Complete payment</p>
+              <h2>Pay now to confirm this shipment order.</h2>
             </div>
-            <p>
-              Add the matching payment link environment variable for the inferred provider and service level,
-              then the quote flow will redirect to the real hosted checkout automatically.
-            </p>
+            <p>Your booking will be confirmed after the payment step is completed.</p>
             <div className="section-cta-inline">
               <button className="button button--primary" disabled={paymentPending} onClick={handlePaymentComplete} type="button">
                 {paymentPending ? "Completing payment..." : `Pay with ${formatPaymentMethod(paymentMethod)}`}

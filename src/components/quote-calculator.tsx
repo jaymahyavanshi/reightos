@@ -26,21 +26,18 @@ const deliveryProfiles = [
   {
     service: "Normal delivery" as const,
     multiplier: 1,
-    dayDelta: 4,
     coverage: "Balanced price with standard fulfillment handling",
     note: "Designed for routine freight moves where cost control matters most.",
   },
   {
     service: "Express delivery" as const,
     multiplier: 1.22,
-    dayDelta: 1,
     coverage: "Priority processing and faster cargo handoff",
     note: "Best for urgent replenishment and tighter delivery commitments.",
   },
   {
     service: "Superfast delivery" as const,
     multiplier: 1.48,
-    dayDelta: -2,
     coverage: "Shortest ETA with highest routing priority",
     note: "Optimized for critical cargo and premium time-sensitive moves.",
   },
@@ -119,7 +116,11 @@ function getMaskedPaymentInstrumentLabel(
   return `${paymentMethod === "debit_card" ? "Debit card" : "Credit card"} ending ${last4}`;
 }
 
-export function QuoteCalculator() {
+type QuoteCalculatorProps = {
+  isAuthenticated: boolean;
+};
+
+export function QuoteCalculator({ isAuthenticated }: QuoteCalculatorProps) {
   const [originCountry, setOriginCountry] = useState("IN");
   const [originState, setOriginState] = useState("MH");
   const [originCity, setOriginCity] = useState("");
@@ -274,13 +275,39 @@ export function QuoteCalculator() {
       destinationAccessorial;
 
     const estimatedBase = baseRate * containerMultiplier * laneMultiplier;
+    const isSameCountry = originCountry === destinationCountry;
+    const isSameState = isSameCountry && safeOriginState === safeDestinationState;
     const transitBaseDays = Math.max(
       mode === "Ocean freight" ? 12 : 3,
       Math.round(distanceKm / (mode === "Ocean freight" ? 520 : 1800)),
     );
 
     const results: DeliveryOption[] = deliveryProfiles.map((profile) => {
-      const transitDays = Math.max(mode === "Ocean freight" ? 8 : 1, transitBaseDays + profile.dayDelta);
+      let transitDays: number;
+
+      if (isSameState) {
+        transitDays = 1;
+      } else if (isSameCountry) {
+        if (profile.service === "Superfast delivery") {
+          transitDays = 2;
+        } else if (profile.service === "Express delivery") {
+          transitDays = 3;
+        } else {
+          transitDays = 5;
+        }
+      } else {
+        const internationalDayOffset =
+          profile.service === "Superfast delivery"
+            ? -2
+            : profile.service === "Express delivery"
+              ? 1
+              : 4;
+
+        transitDays = Math.max(
+          mode === "Ocean freight" ? 8 : 1,
+          transitBaseDays + internationalDayOffset,
+        );
+      }
 
       return {
         service: profile.service,
@@ -322,6 +349,11 @@ export function QuoteCalculator() {
   const selectedQuote = calculation?.results.find((quote) => quote.service === selectedService) ?? null;
 
   async function handlePaymentStart() {
+    if (!isAuthenticated) {
+      setPaymentError("Please log in first. You cannot proceed to payment until you are signed in.");
+      return;
+    }
+
     if (!selectedQuote) {
       setPaymentError("Select a delivery option before continuing to payment.");
       return;
@@ -781,8 +813,18 @@ export function QuoteCalculator() {
             )}
 
             {paymentError ? <p className="form-feedback form-feedback--error">{paymentError}</p> : null}
+            {!isAuthenticated ? (
+              <p className="form-feedback form-feedback--error">
+                Log in to continue with shipment booking and payment.
+              </p>
+            ) : null}
 
-            <button className="button button--primary" disabled={paymentPending} onClick={handlePaymentStart} type="button">
+            <button
+              className="button button--primary"
+              disabled={paymentPending || !isAuthenticated}
+              onClick={handlePaymentStart}
+              type="button"
+            >
               {paymentPending ? "Redirecting..." : "Proceed to payment"}
             </button>
           </div>

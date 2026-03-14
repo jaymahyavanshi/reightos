@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { QuoteCalculator } from "@/components/quote-calculator";
+import { getCurrentUser } from "@/lib/current-user";
 import { quoteBenefits } from "@/lib/marketing-data";
 
-export default function QuotePage() {
+export default async function QuotePage() {
+  const user = await getCurrentUser();
+
   return (
     <main className="page-shell page-shell--inner quote-page">
       <section className="inner-hero inner-hero--plain quote-page__hero">
@@ -17,7 +20,7 @@ export default function QuotePage() {
       </section>
 
       <section className="section section--compact container">
-        <QuoteCalculator />
+        <QuoteCalculator isAuthenticated={Boolean(user)} />
       </section>
 
       <section className="section section--compact container">
