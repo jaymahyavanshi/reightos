@@ -60,16 +60,11 @@ export type QuoteBenefit = {
 };
 
 export const headerGroups: HeaderGroup[] = [
-  { label: "Platform", href: "/enterprise" },
+  { label: "Platform", href: "/platform" },
   { label: "Get Quote", href: "/quote" },
   { label: "Enterprise", href: "/enterprise" },
   { label: "Developers", href: "/developers/freight-tools" },
-];
-
-export const navigationItems: NavigationItem[] = [
-  { href: "/enterprise", label: "Enterprise" },
-  { href: "/quote", label: "Get Quote" },
-  { href: "/developers/freight-tools", label: "Developers" },
+  { label: "Shipping Lanes", href: "/shipping-lanes" },
 ];
 
 export const heroStats: HeroStat[] = [

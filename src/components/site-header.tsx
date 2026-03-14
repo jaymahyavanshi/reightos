@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
 import { getCurrentUser } from "@/lib/current-user";
-import { headerGroups, navigationItems } from "@/lib/marketing-data";
+import { headerGroups } from "@/lib/marketing-data";
 
 export async function SiteHeader() {
   const user = await getCurrentUser();
@@ -32,15 +32,6 @@ export async function SiteHeader() {
               {item.label}
             </Link>
           ))}
-        </nav>
-
-        <nav className="topbar__nav topbar__nav--secondary">
-          {navigationItems.map((item) => (
-            <Link key={item.href} href={item.href}>
-              {item.label}
-            </Link>
-          ))}
-          <Link href="/shipping-lanes">Shipping Lanes</Link>
         </nav>
 
         <div className="topbar__auth">
